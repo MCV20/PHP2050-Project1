@@ -1,5 +1,4 @@
 # PHP2050-Project1
 Project 1: Studying the effects of SDP and ETS on Children
 
-Hi
-hi2
+This project investigates the impact of exposure to smoking during pregnancy (SDP) and environmental tobacco smoke (ETS) on children self-regulation, externalizing behaviors, and substance use. The study comprises of 49 observations with 78 variables. Preliminary results suggest that SDP may negatively affect a child's self-regulation and externalizing behaviors. Additionally, while children of heavy-smoker mothers may have experimented more with substances, there were outlier values regarding the frequency of substance use. ETS appears to affect a child's emotional control and externalization tendencies, with some discrepancies in the results. However, it's essential to note that these findings are exploratory, based solely on data examination, and require further statistical analysis. The study's limitations include a small sample size and missing data, emphasizing the need for cautious interpretation and the potential for future research with more comprehensive data-sets.
