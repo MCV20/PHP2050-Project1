@@ -1,4 +1,4 @@
-# PHP2550-Project1
+# PHP2050-Project1
 Project 1: Studying the effects of SDP and ETS on Children
 
 Hi
