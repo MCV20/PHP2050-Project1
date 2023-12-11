@@ -1,8 +1,9 @@
 ---
-title: "Project 1"
+title: "Investigating the effects of SDP and ETS in Children Develolpment: An exploratory data analysis"
 author: "Monica Colon Vargas"
 format: pdf
 editor: visual
+abstract: "Exposure to smoking during pregnancy (SDP) and exposure to environmental tobacco smoke (ETS) are two environmental factors that impact children. There's a belief that early exposure to smoke might be connected to higher instances of outward behaviors in children, such as Attention-Deficit/Hyperactivity Disorder, and an increased likelihood of substance use. Moreover, early exposure to smoke has been associated with difficulties in self-control, affecting physiological, emotional, behavioral, and cognitive aspects. This project aims to explore the relationship between smoking during pregnancy (SDP) and exposure to environmental tobacco smoke (ETS) and their influence on self-regulation, outward behavior, and substance use. Our study found SDP seems to negatively affect children's self-regulation and behavior, while heavy maternal smoking links to increased drug experimentation, with some outliers. ETS appears to impact emotional control and behavior, but results vary. Limited impact on substance use by ETS is suggested. Caution is urged due to no statistical testing, small sample size, and missing data; larger studies are needed for validation."
 ---
 
 ```{r setup, include=FALSE}
@@ -14,7 +15,7 @@ knitr::opts_chunk$set(echo = FALSE,
 
 ## Introduction
 
-Exposure to smoking during pregnancy (SDP) and exposure to environmental tobacco smoke (ETS) represent two environmental factors that affects children. It has been speculated that early exposure to smoke is associated with elevated rates of externalizing behaviors among children, including conditions like Attention-Deficit/Hyperactivity Disorder, as well as an increased prevalence of substance. Furthermore, early smoke exposure has been linked to difficulties in self-regulation, encompassing challenges in maintaining control over physiological, emotional, behavioral, and cognitive aspects. The aim of this project is to investigate the connection between smoking during pregnancy (SDP) and exposure to environmental tobacco smoke (ETS) and their impact on self-regulation, externalizing behavior, and substance use. The participants in this study were initially enlisted from a prior research project (n=738) and a subset was randomly selected to this study (n=100).
+Exposure to smoking during pregnancy (SDP) and exposure to environmental tobacco smoke (ETS) represent two environmental factors that affects children \[1\]. It has been speculated that early exposure to smoke is associated with elevated rates of externalizing behaviors among children, including conditions like Attention-Deficit/Hyperactivity Disorder, as well as an increased prevalence of substance. Furthermore, early smoke exposure has been linked to difficulties in self-regulation, encompassing challenges in maintaining control over physiological, emotional, behavioral, and cognitive aspects \[2\]. The aim of this project is to investigate the connection between smoking during pregnancy (SDP) and exposure to environmental tobacco smoke (ETS) and their impact on self-regulation, externalizing behavior, and substance use.
 
 After pre-processing the data-set, we have a total of n=49 observations with 78 variables for the mother and the child. The 78 variables include demographics like age, sex, race, language, employment, education level, income. Additionally, we have variables measuring smoke exposure in children across different time points and variables that measures if the mother smoked across different stages during her pregnancy. Tests to study the children difficulties in self-regulation, encompassing challenges in maintaining control over physiological, emotional, behavioral, and cognitive aspects were recollected. Such tests include Brief Problem Monitor, Emotion Regulation Questionnaire,and SWAN scores for ADHD.
 
@@ -30,6 +31,20 @@ library(ggpubr)
 library(kableExtra)
 library(gtsummary)
 library(outliers)
+library(forcats)
+
+library(readr)
+library(gtsummary)
+library(tableone)
+library(dplyr)
+library(ggplot2)
+library(gtable)
+library(kableExtra)
+library(mice)
+library(corrplot)
+library(ggpubr)
+library(pROC)
+library(glmnet)
 
 #Load data
 df <- read.csv("Data/project1.csv",na.strings=c("","NA"))
@@ -107,7 +122,7 @@ df <- df %>% mutate_if(is.integer, as.numeric)
 
 ```
 
-To begin working with the dataset, it's important to address some irregularities in certain variable values. For instance, in the `income` variable, one entry was changed from `250 000` to `250000`. Similarly, the `mom_cig` variable had a value of `40` which didn't align with the intended range for this variable, so it was replaced with `NA` In the `mom_numcig` variable, there were various inconsistent values, such as "2 black and miles a day" which was set to `2` and `44989` which was considered unrealistic and thus set to `NA`. Additionally, `20-25` was adjusted to its mean value of `23.5`, and `none` was converted to `0`. Following these adjustments, we then turned our attention to dealing with 'NA' values in the variables `num_e_cigs_30`, `num_mj_30,` and `num_alc_30`. We set these values to zero if the corresponding `X_ever` variable (where `X` varies for each) indicated zero usage. Having addressed these issues, our next step was to examine the patterns of missing data within the data-set."
+To begin working with the dataset, it's important to address some irregularities in certain variable values. For instance, in the `income` variable, one entry was changed from `250 000` to `250000`. Similarly, the `mom_cig` variable had a value of `40` which didn't align with the intended range for this variable, so it was replaced with `NA` In the `mom_numcig` variable, there were various inconsistent values, such as "2 black and miles a day" which was set to `2` and `44989` which was considered unrealistic and thus set to `NA`. Additionally, `20-25` was adjusted to its mean value of `22.5`, and `none` was converted to `0`. Following these adjustments, we then turned our attention to dealing with 'NA' values in the variables `num_e_cigs_30`, `num_mj_30,` and `num_alc_30`. We set these values to zero if the corresponding `X_ever` variable (where `X` varies for each) indicated zero usage. Having addressed these issues, our next step was to examine the patterns of missing data within the data-set.
 
 This data-set lacks complete cases, indicating that omitting all the `NA` values would result in the entire data-set being eliminated. As depicted in Table 1, we can observe the quantity of missing data for each variable. It is noteworthy that certain variables exhibit identical counts of missing values. In Figure 1, a graphical representation of missing values per individual patient is presented, with patients depicted along the y-axis. It becomes apparent that nearly 50 patients (equivalent to the total count of 49 patients) exhibit missing data. Also, numerous variables share missing values for the same patient, and conversely, several patients share the same missing variables concurrently. For instance, variables spanning from `page` to `pethnic`, `pemploy` to `mom_numcig,` `mom_smoke_32wk` and `mom_smoke_pp1`, `bpm_att_p` to `tethnic` and `cig_ever` to `pqm_paprental_control` all display missing values for the same 8 patients. This pattern suggests that the data may conform to the Missing at Random (MAR) assumption rather than Missing Completely at Random (MCAR). Given that the number of variables exceeds the number of observations, multiple imputation may not be the most efficient approach for handling these missing data. However, for the purposes of this project and when investigating relationships involving specific variables, we will focus exclusively on the complete cases of the variables used at the moment.
 
@@ -153,6 +168,55 @@ vis_miss(df)+theme(axis.text.x=element_text(size=rel(.72), angle = 90))
 ## Demographics
 
 We now provide graphical representations of the demographic characteristics of both the parents and their children. Figure 2 provides an overview of the parent's demographics. It is noteworthy to observe a singular male entry within the data-set, which requires further investigation, given the predominant focus of the study on pregnant individuals. Regarding racial demographics, the data-set predominantly comprises mothers of White ethnicity, followed by individuals of Native Hawaiian, other, and Alaskan Native backgrounds. Moreover, the majority of mothers do not identify as Hispanic or Latino in terms of ethnicity. Age distribution reveals that the majority falls within the range of 33 to 39 years, indicative of a central tendency within this age bracket. In terms of employment, a significant proportion of mothers were employed full-time, and the dataset's estimated mean household income stands at \$63,138.05, signifying an average income level. Furthermore, the majority of mothers possess an educational background that includes at least some college-level education.
+
+```{r}
+
+df$psex <- factor(df$psex, levels = c(0, 1), labels = c("Male", "Female"))
+df$plang <- factor(df$plang, levels = c(0, 1), labels = c("No", "Yes"))
+df$pethnic <- factor(df$pethnic, levels = c(0, 1), labels = c("No", "Yes"))
+df$employ <- factor(df$employ, levels = c(0, 1, 2), labels = c("No", "Part-Time", "Full- Time"))
+df$pedu <- factor(df$pedu, levels = c(0,1,2,3,4,5,6), labels = c("Some HS", "HS", "GED", "Some College", "Two-yr dg", "Four-yr dg", "Postgraduate dg"))
+
+df <- df %>%
+  mutate(prace = case_when(
+    paian == 1 ~ "AIAN",
+    pasian == 1 ~ "Asian",
+    pblack == 1 ~ "Black",
+    pwhite == 1 ~ "White",
+    pnhpi == 1 ~ "NHPI",
+    prace_other == 1 ~ "Other"
+  )) 
+##CHildren
+
+df$tsex <- factor(df$tsex, levels = c(0, 1), labels = c("Male", "Female"))
+df$tethnic <- factor(df$tethnic, levels = c(0, 1), labels = c("No", "Yes"))
+df <- df %>%
+  mutate(trace = case_when(
+    taian == 1 ~ "AIAN",
+    tasian == 1 ~ "Asian",
+    tblack == 1 ~ "Black",
+    twhite == 1 ~ "White",
+    tnhpi == 1 ~ "NHPI",
+    trace_other == 1 ~ "Other"
+  )) 
+
+
+
+
+table1 <- df %>%
+  dplyr::select(prace, income, pethnic, psex, employ, pedu) %>%
+  tbl_summary() %>%
+  bold_labels()
+
+# Summary table for the second set of columns
+table2 <- df %>%
+  dplyr::select(trace, tsex, tethnic, tage) %>%
+  tbl_summary() %>%
+  bold_labels()
+
+
+ 
+```
 
 ```{r fig.pos="H", fig.cap = "Parent Demographics", fig.width=7,fig.height=6}
 #PARENT
@@ -228,7 +292,18 @@ p1 <- ggarrange(prace, pethnic, nrow = 1,ncol = 2,labels = c("A", "B"))
 p2 <- ggarrange(psex,page, labels = c("C", "D"), nrow = 1,ncol = 2)
 p3 <- ggarrange(pemploy,pincome, labels = c("E","F"), ncol = 2)
 p4 <- ggarrange(pedu, labels = "F")
-ggarrange(p1,p2,p3,p4, nrow = 4)
+#ggarrange(p1,p2,p3,p4, nrow = 4)
+
+ df %>%
+  dplyr::select(prace, income, pethnic, psex, employ, pedu) %>%
+  tbl_summary() %>%
+  bold_labels() %>% 
+   kable(caption = "Parent Demographics",booktabs=T,row.names = F) %>% 
+   kable_styling(full_width=T, font_size = 10,latex_options = c('scale_down'))
+
+
+
+
 ```
 
 Figure 3 offers a comprehensive presentation of the demographic characteristics of the children participating in the study. The data reveals that the majority of children are male, with ages predominantly falling within the 12 to 15-year-old range. It is noteworthy that a substantial proportion of these children identify themselves as belonging to the White racial group, followed by those who consider themselves as Black. Additionally, the majority of children do not identify as Hispanic or Latino in terms of ethnicity. Of particular interest is the observation made in Figure 2A, which indicates a discrepancy in racial demographics between the mothers and their children. Notably, while no mothers in the data-set self-identify as belonging to the Black racial group, there is a significant presence of children identifying as such.
@@ -281,7 +356,16 @@ tethnic <- ggplot(df1, aes(x = as.factor(tethnic)))+geom_bar(fill = '#293352')+
 #join the plots together
 p1 <- ggarrange(tage,tsex,labels = c("A", "B"), ncol = 2)
 p2 <- ggarrange(trace,tethnic,labels = c("C", "D"), ncol = 2)
-ggarrange(p1,p2, nrow = 2)
+#ggarrange(p1,p2, nrow = 2)
+df %>%
+  dplyr::select(trace, tsex, tethnic, tage) %>%
+  tbl_summary() %>%
+  bold_labels()%>%
+kable(caption = "Children Demographics",booktabs=T,row.names = F) %>% 
+   kable_styling(full_width=T, font_size = 10,latex_options = c('scale_down'))
+
+
+
 ```
 
 ## Smoking During Pregnancy (SDP)
@@ -313,7 +397,7 @@ df %>%
                      statistic = list(~ "{mean} ({sd})"),
                      by = Smoke_level,
                      missing = "no") %>%
-  kable(booktabs = TRUE, caption = "Mean and SD for tests regarding Child") %>%kableExtra::kable_styling(font_size = 8, latex_options = "HOLD_position")
+  kable(booktabs = TRUE, caption = "Mean and SD for tests regarding Child") %>% kableExtra::kable_styling(font_size = 8, latex_options = "HOLD_position")
 ```
 
 We now study the effect of SDP in substance use on children. Table 3 shows the number of children that have used a cigarette, E-cigarette, Marijuana and Alcohol at least once in their life on based on their mother's category. For example, only 1 children had experience using a cigarette at least once, and this individual comes from a heavy-smoker mother. No children with a non-smoker mother have ever experience using a cigarette or an e-cigarette before. Only one child with a non-smoker mother have used marijuana and two from heavy-smoker mothers. Moreover, we can see that everyone has experienced alcohol before which is not surprisingly.
@@ -329,7 +413,7 @@ df %>% tbl_summary(include = c(cig_ever, e_cig_ever, mj_ever, alc_ever),
 
 ```
 
-Additionally, the amount of substance use in the past 30 days in these children. Since only few of them had experience use of this substance before, we expect these numbers to be even lower due to the fact that maybe that first experience was not during the last 30 days. The purpose of Figure 4 is to show that the majority of these children may not be considered substance users (or at least during the past 30 days) due to the fact that only very few had used a substance. For instance, only one individual with a heavy-smoker mother used e-cigarettes on two days and alcohol on ten days (note that this is not necessarily the same individual) in the past 30 days. On the marijuana plot, we can see more individuals with heavy-smoker mothers that have used the substance in more days than the rest. However note that there is one individual with a non-smoker mother that have used marijuana around 18 days out of the past 30 days. However, note that all of these high values are outliers and the majority of the individuals have not used substances in the past 30 days.
+Additionally, the amount of substance use in the past 30 days in these children. Since only few of them had experience use of this substance before, we expect these numbers to be even lower due to the fact that maybe that first experience was not during the last 30 days. The purpose of Figure 4 is to show that the majority of these children may not be considered substance users (or at least during the past 30 days) due to the fact that only very few had used a substance. For instance, only one individual with a heavy-smoker mother used e-cigarettes on two days and alcohol on ten days (note that this is not necessarily the same individual) in the past 30 days. On the marijuana plot, we can see more individuals with heavy-smoker mothers that have used the substance in more days than the rest. However note that there is one individual with a non-smoker mother that have used marijuana around 18 days out of the past 30 days. However, note that all of these high values are outliers and the majority of the individuals have not used substances in the past 30 days. This variable would be more efficient if converted to a binary outcome.
 
 ```{r fig.pos="H", fig.cap = "Child Substance use in the past 30 days", fig.width=6,fig.height=4}
 
@@ -433,6 +517,12 @@ An exploratory analysis was used in this experiment to investigate the effects o
 It's important to emphasize, though, that none of these conclusions were reached by statistical testing; instead, they were all reached by examining the data alone. As a result, no statistical inferences can be drawn; instead, the data must be analyzed. This study has some limitations that are largely due to the study's limited sample size and large amount of missing data. These findings should be interpreted with caution, and we encourage future studies with larger and more complete data-set to corroborate our results.
 
 This project is under the repository: https://github.com/MCV20/PHP2050-Project1.git
+
+# References
+
+\[1\] DiFranza JR, Aligne CA, Weitzman M. Prenatal and postnatal environmental tobacco smoke exposure and children's health. Pediatrics. 2004 Apr;113(4 Suppl):1007-15. PMID: 15060193.
+
+\[2\] Yolton K, Khoury J, Hornung R, Dietrich K, Succop P, Lanphear B. Environmental tobacco smoke exposure and child behaviors. J Dev Behav Pediatr. 2008 Dec;29(6):450-7. doi: 10.1097/dbp.0b013e31818d0c21. PMID: 19093323; PMCID: PMC8875281.
 
 \newpage
 
